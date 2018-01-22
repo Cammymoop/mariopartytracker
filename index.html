@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Mario Party stat tracker</title>
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-3.1.0.js"></script>
+
+<h3>Charaters:</h3>
+<div id="character_select">
+  <input name="char_luigi" type="checkbox">Luigi &nbsp;&nbsp;
+  <input name="char_mario" type="checkbox">Mario &nbsp;&nbsp;
+  <input name="char_patch" type="checkbox">Peach &nbsp;&nbsp;
+  <input name="char_waluigi" type="checkbox">Waluigi &nbsp;&nbsp;
+  <input name="char_wario" type="checkbox">Wario &nbsp;&nbsp;
+  <input name="char_yoshi" type="checkbox">Yoshi &nbsp;&nbsp;
+  <input name="char_dk" type="checkbox">Donkey Kong &nbsp;&nbsp;
+  <input name="char_toad" type="checkbox">Toad &nbsp;&nbsp;
+  <input name="char_boo" type="checkbox">Boo
+</div>
+Track orbs? <input id='track_orbs' type="checkbox"><br><button id='generate'>Generate</button>
+<div id="message_text" style="display:none;font-size:120%;color:red;"></div>
+
+<h2>Mario party bonus star stat tracker!</h2>  
+<div id='tracker' style='display:none'>
+</div>
+
+<script type='text/javascript'>
+var emotes = {
+    luigi: 'chrisEyes',
+    mario: 'chrisYO',
+    patch: 'chrisPeace',
+    waluigi: 'chrisWAH',
+    wario: 'chrisLUL',
+    yoshi: 'chrisRIP',
+    dk: 'chrisWink',
+    toad: 'chrisBlown',
+    boo: 'falcLUL'
+};
+
+var char_names = {
+    luigi: 'Luigi',
+    mario: 'Mario',
+    patch: 'Peach',
+    waluigi: 'Waluigi',
+    wario: 'Wario',
+    yoshi: 'Yoshi',
+    dk: 'Donkey Kong',
+    toad: 'Toad',
+    boo: 'Boo'
+};
+
+var chars = ['luigi', 'luigi-o', 'mario', 'mario-o', 'peach', 'peach-o', 'wa', 'wa-o'];
+var all_trackers = [];
+var orbs = false;
+
+var scores = {};
+
+$('#generate').click(function () {
+    var checked = $('#character_select input:checked');
+    if (checked.toArray().length === 4) {
+        chars = [];
+        checked.each(function (i, element) {
+            var name = element.name.slice(5);
+            chars.push(name);
+        });
+
+        orbs = $('#track_orbs').is(':checked');
+        generateTracker();
+
+        $('#message_text').hide();
+
+        $('#tracker').show();
+    } else {
+        $('#message_text').text('Select exactly four characters').show();
+        $('#tracker').hide();
+    }
+});
+
+function newTracker() {
+  all_trackers = chars.slice(); //copy
+  if (orbs) {
+      $.each(chars, function (i, val) {all_trackers.push(val + '-o');});
+  }
+  resetScores();
+  $.each(all_trackers, function(i, val) {
+      $('#' + val).click(function () {
+          scores[val] += 1;
+          $('#' + val + '_sp').text(scores[val]);
+          updateOut();
+      });
+      $('#sub_' + val).click(function () {
+          scores[val] -= 1;
+          $('#' + val + '_sp').text(scores[val]);
+          updateOut();
+      });
+  });
+  $('.copyme').click(function() {
+      copyToClipboard($(this).prev());
+  });
+  $('#reset').click(function () {resetScores(); updateOut();});
+}
+
+function resetScores() {
+    scores = {};
+    $.each(all_trackers, function(i, val) {
+        scores[val] = 0;
+        $('#' + val + '_sp').text('0');
+    });
+};
+
+function updateOut()
+{
+    var tx = '';
+    $.each(chars, function (i, val) {
+        tx += emotes[val] + ' ' + scores[val] + ' ';
+    });
+    $('#chat_out').text('HAPPENING ' + tx);
+    if (orbs) {
+        tx = '';
+        $.each(chars, function (i, val) {
+            tx += emotes[val] + ' ' + scores[val + '-o'] + ' ';
+        });
+        $('#chat_out-o').text('HAPPENING ' + tx);
+        tx = '';
+        $.each(chars, function (i, val) {
+            tx += emotes[val] + ' ' + scores[val] + '/' + scores[val + '-o'] + ' ';
+        });
+        $('#chat_out-c').text('?/ORBS ' + tx);
+    }
+}
+
+function generateTracker() {
+    var content = '';
+    content += '<strong>Happening:</strong><br>';
+    $.each(chars, function (i, val) {
+        content += '<button id="' + val + '">';
+        content += char_names[val] + '</button><button id="sub_' + val + '">-</button>: <span id="' + val + '_sp">0</span> ';
+    });
+    content += '<br>';
+    content += 'Chat message: <span id="chat_out">HAPPENING ';
+    $.each(chars, function (i, val) {
+        content += emotes[val] + ' 0 ';
+    });
+    content += '</span>';
+    content += '<button class="copyme">copy</button><br><br><br>';
+    if (orbs) {
+        content += '<strong>Orbs:</strong><br>';
+        $.each(chars, function (i, val) {
+            content += '<button id="' + val + '-o">';
+            content += char_names[val] + '</button><button id="sub_' + val + '-o">-</button>: <span id="' + val + '-o_sp">0</span> ';
+        });
+        content += '<br>';
+        content += 'Chat message: <span id="chat_out-o">ORBS ';
+        $.each(chars, function (i, val) {
+            content += emotes[val] + ' 0 ';
+        });
+        content += '</span>';
+        content += '<button class="copyme">copy</button>';
+        content += '<br><br>';
+        content += '<strong>Combined chat message:</strong> <br><span id="chat_out-c">?/orbs ';
+        $.each(chars, function (i, val) {
+            content += emotes[val] + ' 0/0 ';
+        });
+        content += '</span>';
+        content += '<button class="copyme">copy</button><br><br><br>';
+    }
+    content += '<button id="reset">RESET</button><br>';
+
+    $('#tracker').html(content);
+    newTracker();
+}
+
+function copyToClipboard(element) {
+    var $temp = $("<input>");
+    $("body").append($temp);
+    console.log(element.text());
+    $temp.val(element.text()).select();
+    document.execCommand("copy");
+    $temp.remove();
+}
+</script>
+
+</body>
+</html>
